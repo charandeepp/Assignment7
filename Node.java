@@ -5,6 +5,7 @@
  */
 
 import java.io.Serializable;
+import java.math.BigInteger;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -19,10 +20,10 @@ public class Node implements ChordInterface{
     public class NodeInfo implements Serializable{
 
         public String nodeURL;
-        public String nodeId;
+        public BigInteger nodeId;
         public Integer nodeNum;
 
-        public NodeInfo(String url,String id,Integer num){
+        public NodeInfo(String url,BigInteger id,Integer num){
             nodeURL = url;
             nodeId = id;
             nodeNum = num;
@@ -56,9 +57,9 @@ public class Node implements ChordInterface{
         }
         else{
             joinLock = false;
-            String hashKey = null;
+            BigInteger hashKey = null;
             try {
-                hashKey = sha1(url);
+                hashKey = sha1BigInt(url);
             }
             catch (NoSuchAlgorithmException e){
                 e.printStackTrace();
@@ -104,7 +105,7 @@ public class Node implements ChordInterface{
     }
 
     @Override
-    public NodeInfo successor(String id) {
+    public NodeInfo successor(BigInteger id) {
         //if()
         return null;
     }
@@ -127,7 +128,7 @@ public class Node implements ChordInterface{
     }
 
     @Override
-    public NodeInfo predecessor(String id) {
+    public NodeInfo predecessor(BigInteger id) {
         return null;
     }
 
@@ -155,7 +156,7 @@ public class Node implements ChordInterface{
 
     }
 
-    static String sha1(String input) throws NoSuchAlgorithmException {
+    public String sha1String(String input) throws NoSuchAlgorithmException {
         MessageDigest mDigest = MessageDigest.getInstance("SHA1");
         byte[] result = mDigest.digest(input.getBytes());
         StringBuffer sb = new StringBuffer();
@@ -166,9 +167,20 @@ public class Node implements ChordInterface{
         return sb.toString();
     }
 
-    public Hashtable<Integer,NodeInfo> fixFingers(String id){
+    public BigInteger sha1BigInt(String input) throws NoSuchAlgorithmException {
+        MessageDigest mDigest = MessageDigest.getInstance("SHA1");
+        byte[] result = mDigest.digest(input.getBytes());
+        BigInteger bi = new BigInteger(1, result);
+        return bi;
+    }
+
+    public Hashtable<Integer,NodeInfo> fixFingers(BigInteger id){
 
         Hashtable<Integer,NodeInfo> fingerTable = new Hashtable<Integer, NodeInfo>();
+
+        for(int i=0;i<160;i++){
+            
+        }
 
         return fingerTable;
     }
