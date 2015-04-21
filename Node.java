@@ -4,9 +4,6 @@
  * Created by Charandeep on 4/21/15.
  */
 
-
-import org.omg.CORBA.INTERNAL;
-
 import java.io.Serializable;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -90,9 +87,7 @@ public class Node implements ChordInterface{
             globalNodeCount++;
             result.successor = successor;
             result.predecessor = predecessor(hashKey);
-
-
-
+            result.fingerTable = fixFingers(hashKey);
             successorNode.notify(result.newNodeInfo);
 
 
@@ -131,6 +126,11 @@ public class Node implements ChordInterface{
             myPredecessor = predecessor;
     }
 
+    @Override
+    public NodeInfo predecessor(String id) {
+        return null;
+    }
+
     /*
     @Override
     public void updateSuccessor(NodeInfo successor) {
@@ -164,6 +164,13 @@ public class Node implements ChordInterface{
         }
 
         return sb.toString();
+    }
+
+    public Hashtable<Integer,NodeInfo> fixFingers(String id){
+
+        Hashtable<Integer,NodeInfo> fingerTable = new Hashtable<Integer, NodeInfo>();
+
+        return fingerTable;
     }
 
 }
