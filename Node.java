@@ -13,6 +13,7 @@ import java.rmi.registry.Registry;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Hashtable;
+import java.rmi.server.UnicastRemoteObject;
 
 public class Node implements ChordInterface{
 
@@ -31,7 +32,7 @@ public class Node implements ChordInterface{
 
     }
 
-    static String[] nodeURLs ={"node1","node2","node3","node4"};
+    static String[] nodeURLs ={"node0","node1","node2","node3"};
 
     private NodeInfo myInfo;
     private NodeInfo mySuccessor = null;
@@ -261,6 +262,23 @@ public class Node implements ChordInterface{
         }
 
         return result;
+
+    }
+
+    public static void main(){
+
+        ChordInterface node = new Node("node0");
+
+        try {
+            ChordInterface stub =
+                    (ChordInterface) UnicastRemoteObject.exportObject(node, 0);
+            Registry registry = LocateRegistry.getRegistry();
+            registry.rebind("node0", stub);
+
+        }
+        catch (RemoteException e){
+            e.printStackTrace();
+        }
 
     }
 }
