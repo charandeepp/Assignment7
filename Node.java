@@ -31,6 +31,8 @@ public class Node implements ChordInterface{
 
     }
 
+    static String[] nodeURLs ={"node1","node2","node3","node4"};
+
     private NodeInfo myInfo;
     private NodeInfo mySuccessor = null;
     private NodeInfo myPredecessor = null;
@@ -44,6 +46,35 @@ public class Node implements ChordInterface{
 
         dictionary_ = new Hashtable<String,String>();
         fingerTable_ = new String[160];
+
+        try {
+            if (url.compareTo(nodeURLs[0]) == 0) {
+                myInfo = new NodeInfo(url, sha1BigInt(url), 0);
+            }
+            else{
+                Registry registry = LocateRegistry.getRegistry();
+                ChordInterface mainNode = (ChordInterface) registry.lookup(nodeURLs[0]);
+                JoinResponse joinResponse = mainNode.join(url);
+                if(joinResponse.status == JoinResponse.Status.BUSY){
+                    System.out.println("Node-0 is busy! Kill and reconnect after sometime.");
+                }
+                else{
+                    myInfo = joinResponse.newNodeInfo;
+                    myPredecessor = joinResponse.predecessor;
+                    mySuccessor = joinResponse.successor;
+                    fingerTable_ = joinResponse.fingerTable;
+                }
+            }
+        }
+        catch (NoSuchAlgorithmException e){
+            e.printStackTrace();
+        }
+        catch(RemoteException e){
+            e.printStackTrace();
+        }
+        catch (NotBoundException e){
+            e.printStackTrace();
+        }
 
 
     }
@@ -100,7 +131,46 @@ public class Node implements ChordInterface{
 
     @Override
     public NodeInfo successor(BigInteger id) {
-        //if()
+        for(int i=0;i<160;i++){
+            int compare_value = id.subtract(myInfo.nodeId).compareTo(power(2,i));
+
+            if(compare_value >0) {
+                continue;
+            }
+            else if(compare_value < 0){
+                Registry registry;
+                ChordInterface successorNode = null;
+
+                try {
+                    registry = LocateRegistry.getRegistry();
+                    successorNode = (ChordInterface) registry.lookup(fingerTable_[i-1]);
+                }
+                catch(RemoteException e){
+                    System.out.println(e);
+                }
+                catch (NotBoundException e){
+                    System.out.println(e);
+                }
+                return successorNode.successor(id);
+            }
+            else{
+                Registry registry;
+                ChordInterface successorNode = null;
+
+                try {
+                    registry = LocateRegistry.getRegistry();
+                    successorNode = (ChordInterface) registry.lookup(fingerTable_[i]);
+                }
+                catch(RemoteException e){
+                    System.out.println(e);
+                }
+                catch (NotBoundException e){
+                    System.out.println(e);
+                }
+                return successorNode.getMyInfo();
+            }
+
+        }
         return null;
     }
 
@@ -125,6 +195,10 @@ public class Node implements ChordInterface{
         return null;
     }
 
+    @Override
+    public NodeInfo getMyInfo(){
+        return myInfo;
+    }
     /*
     @Override
     public void updateSuccessor(NodeInfo successor) {
@@ -189,5 +263,4 @@ public class Node implements ChordInterface{
         return result;
 
     }
-
 }
