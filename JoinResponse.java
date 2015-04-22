@@ -14,5 +14,5 @@ public class JoinResponse implements Serializable{
     public Node.NodeInfo newNodeInfo;
     public Node.NodeInfo successor;
     public Node.NodeInfo predecessor;
-    public Hashtable<Integer, Node.NodeInfo> fingerTable;
+    public String[] fingerTable;
 }
