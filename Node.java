@@ -37,13 +37,13 @@ public class Node implements ChordInterface{
     private Integer globalNodeCount = 0;
 
     private Hashtable<String,String> dictionary_;
-    private Hashtable<Integer,NodeInfo> fingerTable_;
+    private String[] fingerTable_;
 
     private boolean joinLock = false;
     public Node(String url){
 
         dictionary_ = new Hashtable<String,String>();
-        fingerTable_ = new Hashtable<Integer,NodeInfo>();
+        fingerTable_ = new String[160];
 
 
     }
@@ -67,13 +67,11 @@ public class Node implements ChordInterface{
 
             successor = successor(hashKey);
             Registry registry;
-            ChordInterface node = null;
             ChordInterface successorNode = null;
 
             try {
                 registry = LocateRegistry.getRegistry();
                 successorNode = (ChordInterface) registry.lookup(successor.nodeURL);
-                node = (ChordInterface) registry.lookup(url);
             }
             catch(RemoteException e){
                 System.out.println(e);
@@ -90,17 +88,13 @@ public class Node implements ChordInterface{
             result.predecessor = predecessor(hashKey);
             result.fingerTable = fixFingers(hashKey);
             successorNode.notify(result.newNodeInfo);
-
-
-
         }
         return result;
     }
 
     @Override
     public String lookup(String word){
-        String meaning = null;
-
+        String meaning = dictionary_.get(word);
         return meaning;
     }
 
@@ -112,13 +106,12 @@ public class Node implements ChordInterface{
 
     @Override
     public void join_done(NodeInfo newNode) {
-
         joinLock = true;
     }
 
     @Override
-    public void insertKey() {
-
+    public void insertKey(String word, String meaning) {
+        dictionary_.put(word,meaning);
     }
 
     @Override
@@ -150,7 +143,7 @@ public class Node implements ChordInterface{
 
     }
 
-    public Hashtable getFingerTable_(){
+    public String[] getFingerTable_(){
 
         return fingerTable_;
 
@@ -174,15 +167,27 @@ public class Node implements ChordInterface{
         return bi;
     }
 
-    public Hashtable<Integer,NodeInfo> fixFingers(BigInteger id){
+    public String[] fixFingers(BigInteger id){
 
-        Hashtable<Integer,NodeInfo> fingerTable = new Hashtable<Integer, NodeInfo>();
+        String[] fingerTable = new String[160];
 
         for(int i=0;i<160;i++){
-            
+            fingerTable[i] = successor(id.add(power(2,i))).nodeURL;
         }
 
         return fingerTable;
+    }
+
+    public BigInteger power(Integer base, Integer exponent){
+
+        BigInteger result = BigInteger.ONE;
+
+        for(int i=1;i<=exponent;i++){
+            result = result.multiply(BigInteger.valueOf(base));
+        }
+
+        return result;
+
     }
 
 }

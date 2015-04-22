@@ -7,7 +7,7 @@ import java.rmi.Remote;
 public interface ChordInterface extends Remote{
 
     public JoinResponse join(String url);
-    public void insertKey();
+    public void insertKey(String word, String meaning);
     public Node.NodeInfo successor(BigInteger id);
     public String lookup(String word);
     public void join_done(Node.NodeInfo newNode);
