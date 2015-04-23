@@ -20,7 +20,9 @@ public class Node implements ChordInterface{
 
     public class NodeInfo implements Serializable{
 
-        public String nodeURL;
+		private static final long serialVersionUID = 1L;
+
+		public String nodeURL;
         public BigInteger nodeId;
         public Integer nodeNum;
 

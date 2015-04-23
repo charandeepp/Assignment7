@@ -1,12 +1,13 @@
 import java.io.Serializable;
-import java.util.Hashtable;
 
 /**
  * Created by Charandeep on 4/21/15.
  */
 public class JoinResponse implements Serializable{
 
-    public enum Status{
+	private static final long serialVersionUID = 1L;
+
+	public enum Status{
         BUSY,DONE
     }
 
