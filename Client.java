@@ -3,19 +3,17 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.math.BigInteger;
 import java.rmi.AccessException;
 import java.rmi.NotBoundException;
 import java.rmi.RMISecurityManager;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
 /**
+ * Client class which is used to try and test the DHT functionality
  * 
  * @author rkandur
  *
@@ -28,13 +26,9 @@ public class Client {
 	
 	private static HashMap<String, String> wordMeaningStore_ = new HashMap<String, String>();
 
-	public static BigInteger sha1BigInt(String input) throws NoSuchAlgorithmException {
-        MessageDigest mDigest = MessageDigest.getInstance("SHA1");
-        byte[] result = mDigest.digest(input.getBytes());
-        BigInteger bi = new BigInteger(1, result);
-        return bi;
-    }
-	
+	/*
+	 * Loads all words and meanings initially
+	 */
 	public static void loadWordMeaningPairs() {
 		try {
 			File file = new File(WORDS_FILE_PATH);
@@ -54,41 +48,44 @@ public class Client {
 		}
 	}
 	
+	/*
+	 * Inserts all the words into a DHT 
+	 */
 	private static void insertWordsInDHT(ChordInterface node0, Registry registry) {
 
 		for(String word : wordMeaningStore_.keySet()) {
+			FindNodeResponsePair fp = node0.find_node(word, true);
 			try {
-				Node.NodeInfo successor = node0.successor(sha1BigInt(word));
-				try {
-					ChordInterface insertNode = (ChordInterface) registry.lookup(successor.nodeURL);
-					// TODO: insertKey should have an optional parameter to get a full log trace.
-					insertNode.insertKey(word, wordMeaningStore_.get(word));
-				} catch (RemoteException | NotBoundException e) {
-					logger.severe("Could not insert word {" + word + "} in DHT.");
-				}
-			} catch (NoSuchAlgorithmException e) {
-				logger.severe("Could not find hash of the word {" + word + "}");
+				logger.info("Insert find_node trace for word {" + word + "} is : " + fp.response_);
+				ChordInterface insertNode = (ChordInterface) registry.lookup(fp.node_.nodeURL_);
+				insertNode.insertKey(word, wordMeaningStore_.get(word));
+				logger.info("Successfully inserted word {" + word + "} in the DHT.");
+			} catch (RemoteException | NotBoundException e) {
+				logger.severe("Could not insert word {" + word + "} in DHT.");
 			}
 		}
         
 	}
 	
-	private static void lookupinDHT(String word, ChordInterface node0, Registry registry) {
+	/*
+	 * method to lookup a specific work in a DHT
+	 */
+	private static void lookupinDHT(String word, ChordInterface node0, Registry registry, boolean withTrace) {
 
 		String meaning = new String();
 		
 		try {
-			Node.NodeInfo successor = node0.successor(sha1BigInt(word));
-			ChordInterface lookupNode = (ChordInterface) registry.lookup(successor.nodeURL);
-			// TODO: lookup should have an optional parameter to get a full log trace.
+			FindNodeResponsePair fp = node0.find_node(word, withTrace);
+			if(withTrace) {
+				logger.info("Lookup find_node trace for word {" + word + "} is : " + fp.response_);
+			}
+			ChordInterface lookupNode = (ChordInterface) registry.lookup(fp.node_.nodeURL_);
 			meaning = lookupNode.lookup(word);
 		} catch (AccessException e) {
 			e.printStackTrace();
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		} catch (NotBoundException e) {
-			e.printStackTrace();
-		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 		}
 		
@@ -99,6 +96,16 @@ public class Client {
 		}
 	}
 
+	private static void printChoiceList() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("Please enter your choice:").append(System.getProperty("line.separator"))
+			.append("1. print ring structure").append(System.getProperty("line.separator"))
+			.append("2. lookup word without log trace").append(System.getProperty("line.separator"))
+			.append("3. lookup with log trace").append(System.getProperty("line.separator"))
+			.append("4. Exit").append(System.getProperty("line.separator"));
+		System.out.println(sb.toString());
+	}
+	
 	public static void main(String[] args) {
 		
 		System.setSecurityManager(new RMISecurityManager());
@@ -121,29 +128,53 @@ public class Client {
 		// insert dictionary words and meanings into DHT
 		insertWordsInDHT(node0, registry);
 		
-		String continueLooping = "y";
-		String lookupWord = new String();
+		String inputChoice = new String();
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 		
-		do {
+		while(true) {
 			
-			System.out.println("Enter the word to lookup:");
+			printChoiceList();
+			
 			try {
-				lookupWord = br.readLine();
+				inputChoice = br.readLine();
+				switch(Integer.parseInt(inputChoice)) 
+				{
+					case 1: { 
+								node0.printRingStructure();
+								break; 
+							}
+					case 2: {
+								try {
+									logger.info("Enter the word to lookup: ");
+									String word = br.readLine();
+									lookupinDHT(word, node0, registry, false);
+								} catch (IOException e) {
+									System.out.println("Error while reading the input. Please try again !");
+								}
+								break; 
+							}
+					case 3: {
+								try {
+									logger.info("Enter the word to lookup: ");
+									String word = br.readLine();
+									lookupinDHT(word, node0, registry, true);
+								} catch (IOException e) {
+									System.out.println("Error while reading the input. Please try again !");
+								}
+								break; 
+							}
+					case 4: { 
+								System.exit(0);
+								break; 
+							}
+					default: { break; }
+				}
+				
 			} catch (IOException e) {
-				lookupWord = new String();
+				System.out.println("Invalid input entered {" + inputChoice +"} try again !");
 			}
 			
-			lookupinDHT(lookupWord, node0, registry);
-			
-			System.out.println("Do you want to continue ? (y/n)");
-			try {
-				continueLooping = br.readLine();
-			} catch (IOException e) {
-				continueLooping = "n";
-			}
-			
-		} while(continueLooping.equals("y") || continueLooping.equals("Y"));
+		}
 		
 	}
 

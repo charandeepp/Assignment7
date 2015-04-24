@@ -2,6 +2,9 @@
 
 /**
  * Created by Charandeep on 4/21/15.
+ * 
+ * class which denotes a specific node on the Chord ring
+ * 
  */
 
 import java.io.Serializable;
@@ -10,62 +13,78 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Hashtable;
 import java.rmi.server.UnicastRemoteObject;
+import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.logging.Logger;
 
+/**
+ * 
+ * @author rkandur
+ * TODO:
+ * 1. synchronization among read and write aspects?
+ *
+ */
 public class Node implements ChordInterface{
-
 
     public class NodeInfo implements Serializable{
 
 		private static final long serialVersionUID = 1L;
 
-		public String nodeURL;
-        public BigInteger nodeId;
-        public Integer nodeNum;
+		public String nodeURL_;
+        public BigInteger nodeId_;
+        public Integer nodeNum_;
 
         public NodeInfo(String url,BigInteger id,Integer num){
-            nodeURL = url;
-            nodeId = id;
-            nodeNum = num;
+            nodeURL_ = url;
+            nodeId_ = id;
+            nodeNum_ = num;
         }
 
     }
 
-    static String[] nodeURLs ={"node0","node1","node2","node3"};
-
-    private NodeInfo myInfo;
-    private NodeInfo mySuccessor = null;
-    private NodeInfo myPredecessor = null;
-    private Integer globalNodeCount = 0;
+    private static String MASTER_NODE_URL;
+    private NodeInfo myInfo_;
+    private NodeInfo mySuccessor_ = null;
+    private NodeInfo myPredecessor_ = null;
+    private Integer globalNodeCount_ = 0;
 
     private Hashtable<String,String> dictionary_;
     private String[] fingerTable_;
-
-    private boolean joinLock = false;
+    private boolean joinLock_ = false;
+    
+    private ChordInterface masterNode_;
+    private static Logger logger = ServerLogger.logger();
+    private boolean isMasterNode_ = Boolean.FALSE;
+    
     public Node(String url){
 
         dictionary_ = new Hashtable<String,String>();
         fingerTable_ = new String[160];
 
         try {
-            if (url.compareTo(nodeURLs[0]) == 0) {
-                myInfo = new NodeInfo(url, sha1BigInt(url), 0);
+            if (url.compareTo(MASTER_NODE_URL) == 0) {
+            	isMasterNode_ = true;
+                myInfo_ = new NodeInfo(url, Utils.sha1BigInt(url), 0);
+                myPredecessor_ = this.myInfo_;
+                mySuccessor_ = this.myInfo_;
+                masterNode_ = this;
             }
             else{
+            	isMasterNode_ = false;
                 Registry registry = LocateRegistry.getRegistry();
-                ChordInterface mainNode = (ChordInterface) registry.lookup(nodeURLs[0]);
-                JoinResponse joinResponse = mainNode.join(url);
+                masterNode_ = (ChordInterface) registry.lookup(MASTER_NODE_URL);
+                JoinResponse joinResponse = masterNode_.join(url);
                 if(joinResponse.status == JoinResponse.Status.BUSY){
-                    System.out.println("Node-0 is busy! Kill and reconnect after sometime.");
+                    logger.info("Node-0 is busy! Kill and reconnect after sometime.");
                 }
                 else{
-                    myInfo = joinResponse.newNodeInfo;
-                    myPredecessor = joinResponse.predecessor;
-                    mySuccessor = joinResponse.successor;
+                    myInfo_ = joinResponse.newNodeInfo;
+                    myPredecessor_ = joinResponse.predecessor;
+                    mySuccessor_ = joinResponse.successor;
                     fingerTable_ = joinResponse.fingerTable;
+                    masterNode_.join_done(myInfo_);
                 }
             }
         }
@@ -79,63 +98,189 @@ public class Node implements ChordInterface{
             e.printStackTrace();
         }
 
-
     }
+
+    /*
+     * used to join a new node in the Chord ring
+     */
     @Override
     public JoinResponse join(String url){
-        JoinResponse result = null;
-        NodeInfo successor;
-        if(joinLock==false){
-            result = new JoinResponse();
-            result.status = JoinResponse.Status.BUSY;
+    	
+        if(joinLock_==false){
+        	logger.info("Node is Busy, Please try later !");
+        	return new JoinResponse(JoinResponse.Status.BUSY, "Node is Busy, Please try later !");
         }
-        else{
-            joinLock = false;
-            BigInteger hashKey = null;
-            try {
-                hashKey = sha1BigInt(url);
-            }
-            catch (NoSuchAlgorithmException e){
-                e.printStackTrace();
-            }
+       
+        joinLock_ = false;
+        StringBuilder response = new StringBuilder();
+        
+        BigInteger hashKey = null;
+        try {
+            hashKey = Utils.sha1BigInt(url);
+            response.append("Computed hash {" + hashKey + "} for new node with URL {" + url + "}")
+            		.append(System.getProperty("line.separator"));
+        }
+        catch (NoSuchAlgorithmException e){
+        	response.append(e.getMessage());
+        	logger.severe(response.toString());
+        	return new JoinResponse(JoinResponse.Status.ERROR, response.toString());
+        }
 
-            successor = successor(hashKey);
-            Registry registry;
-            ChordInterface successorNode = null;
-
-            try {
-                registry = LocateRegistry.getRegistry();
-                successorNode = (ChordInterface) registry.lookup(successor.nodeURL);
-            }
-            catch(RemoteException e){
-                System.out.println(e);
-            }
-            catch (NotBoundException e){
-                System.out.println(e);
-            }
-            result = new JoinResponse();
-            result.status = JoinResponse.Status.DONE;
-            result.newNodeInfo.nodeId = hashKey;
-            result.newNodeInfo.nodeNum = globalNodeCount;
-            globalNodeCount++;
-            result.successor = successor;
-            result.predecessor = predecessor(hashKey);
-            result.fingerTable = fixFingers(hashKey);
+        NodeInfo successor = successor(hashKey);
+        
+        JoinResponse result = new JoinResponse();
+        
+        result.newNodeInfo.nodeURL_ = url;
+        response.append("Updating the URL of the new node to {" + url + "}")
+				.append(System.getProperty("line.separator"));
+        
+        result.newNodeInfo.nodeId_ = hashKey;
+        response.append("Updating the nodeID of the new node to {" + hashKey + "}")
+				.append(System.getProperty("line.separator"));
+        
+        result.newNodeInfo.nodeNum_ = globalNodeCount_;
+        globalNodeCount_++;
+        
+        result.successor = successor;
+        response.append("Updating the successor of the new node to {" + successor.nodeURL_ + "}")
+        		.append(System.getProperty("line.separator"));
+        
+        result.predecessor = predecessor(hashKey);
+        response.append("Updating the predecessor of the new node to {" + result.predecessor.nodeURL_ + "}")
+				.append(System.getProperty("line.separator"));
+        
+        result.fingerTable = computeFingerTableFor(hashKey);
+        response.append("Updating the finger table of the new node to")
+				.append(System.getProperty("line.separator"));
+        
+        // we should update the predecessor information in the new node's successor
+        ChordInterface successorNode;
+        try {
+        	Registry registry = LocateRegistry.getRegistry();
+            successorNode = (ChordInterface) registry.lookup(successor.nodeURL_);
             successorNode.notify(result.newNodeInfo);
+            response.append("Updating the predecessor of the node following the new node {")
+					.append(successor.nodeURL_).append("}.")
+					.append(System.getProperty("line.separator"));
         }
+        catch(Exception e){
+        	response.append(e.getMessage());
+        	logger.severe(response.toString());
+        	return new JoinResponse(JoinResponse.Status.ERROR, response.toString());
+        }
+        
+        // we should also update the successor pointer of the new node's predecessor
+        ChordInterface predecessorNode;
+        try {
+        	Registry registry = LocateRegistry.getRegistry();
+            predecessorNode = (ChordInterface) registry.lookup(result.predecessor.nodeURL_);
+            predecessorNode.updateSuccessor(result.newNodeInfo);
+			response.append("Updating the successor of the node preceding the new node {")
+					.append(result.predecessor.nodeURL_).append("}.")
+					.append(System.getProperty("line.separator"));
+        }
+        catch(Exception e){
+        	response.append(e.getMessage());
+        	logger.severe(response.toString());
+        	return new JoinResponse(JoinResponse.Status.ERROR, response.toString());
+        }
+		
+		// we need to reorganize the finger table and the keys information
+		// after the new node joins
+        redistributeFingerTables(response);
+        
+        response.append("Redistributing the keys after the new node has joined !")
+				.append(System.getProperty("line.separator"));
+        redistributeKeys(successorNode);
+        
+        result.status = JoinResponse.Status.DONE;
+        response.append("Updating the status of the response to DONE")
+				.append(System.getProperty("line.separator"));
+        
+        result.response = response.toString();
+        logger.info(response.toString());
+        
         return result;
     }
 
+    public void redistributeFingerTables(StringBuilder response) {
+    	
+    	// we will just be adjusting the fingers of all the nodes in the ring
+		try {
+
+			// updating the finger table of master node
+			masterNode_.fixFingers();
+			response.append("Updating the finger table of the node {")
+					.append(masterNode_.getMyInfo().nodeURL_).append("}")
+					.append(System.getProperty("line.separator"));
+			
+			Registry registry = LocateRegistry.getRegistry();			
+			NodeInfo currNodeInfo = masterNode_.getThisSuccessor();
+			
+			while(currNodeInfo.nodeId_ != masterNode_.getMyInfo().nodeId_) {
+				
+				response.append("Updating the finger table of the node {")
+						.append(currNodeInfo.nodeURL_).append("}")
+						.append(System.getProperty("line.separator"));
+				
+				ChordInterface currNode = (ChordInterface) registry.lookup(currNodeInfo.nodeURL_);
+				currNode.fixFingers();
+				currNodeInfo = currNode.getThisSuccessor();
+				
+			}
+			
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		} catch (NotBoundException e) {
+			e.printStackTrace();
+		}
+        
+    }
+    
+    public void redistributeKeys(ChordInterface successor) {
+    	
+		try {
+
+			// after a new node has joined, keys which earlier belonged to this
+			// node might belong to the next node, i.e., the successor in the
+			// ring. We need to slide these keys to the next node.
+			// Since only the keys which are neighbors to the new node might
+			// need keys to be redistributed, we can just do this for them
+			Registry registry = LocateRegistry.getRegistry();
+			ChordInterface newNode = (ChordInterface) registry.lookup(successor.getThisPredecessor().nodeURL_);
+			
+			Hashtable<String, String> keyStore = successor.getKeyStore();
+			HashMap<String, String> keysToBeMoved = new HashMap<String, String>();
+			for(String key : keyStore.keySet()) {
+				// we should move only if the key value is < newNodeId
+				if(Utils.sha1BigInt(key).compareTo(newNode.getMyInfo().nodeId_) < 0) {
+					keysToBeMoved.put(key, keyStore.get(key));
+				}
+			}
+			for(String key: keysToBeMoved.keySet()) {
+				newNode.insertKey(key, keysToBeMoved.get(key));
+				successor.removeKey(key);
+			}
+			
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		} catch (NotBoundException e) {
+			e.printStackTrace();
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		}
+        
+    }
+    
     @Override
     public String lookup(String word){
-        String meaning = dictionary_.get(word);
-        return meaning;
+        return dictionary_.get(word);
     }
 
     @Override
     public NodeInfo successor(BigInteger id) {
         for(int i=0;i<160;i++){
-            int compare_value = id.subtract(myInfo.nodeId).compareTo(power(2,i));
+            int compare_value = id.subtract(myInfo_.nodeId_).compareTo(Utils.power(2,i));
 
             if(compare_value >0) {
                 continue;
@@ -179,103 +324,181 @@ public class Node implements ChordInterface{
 
     @Override
     public void join_done(NodeInfo newNode) {
-        joinLock = true;
+    	if(!isMasterNode_) {
+    		logger.severe("I am not a master to serve join_done request !!!");
+    		return;
+    	}
+        joinLock_ = true;
     }
 
     @Override
     public void insertKey(String word, String meaning) {
         dictionary_.put(word,meaning);
     }
+    
+    @Override
+    public void removeKey(String word) {
+        dictionary_.remove(word);
+    }
 
     @Override
     public void notify(NodeInfo predecessor) {
-        if(myPredecessor == null || ((predecessor.nodeId.compareTo(myPredecessor.nodeId) <0) && (predecessor.nodeId.compareTo(myInfo.nodeId)>0 || myInfo.nodeNum==0)))
-            myPredecessor = predecessor;
+		if (myPredecessor_ == null || 
+				((predecessor.nodeId_.compareTo(myPredecessor_.nodeId_) < 0) && 
+				(predecessor.nodeId_.compareTo(myInfo_.nodeId_) > 0 || myInfo_.nodeNum_ == 0))) {
+            myPredecessor_ = predecessor;
+		}
     }
 
     @Override
     public NodeInfo predecessor(BigInteger id) {
+		try {
+			Node.NodeInfo successor = successor(id);
+	    	Registry registry = LocateRegistry.getRegistry();
+	    	ChordInterface predecessorNode = (ChordInterface) registry.lookup(successor.nodeURL_);
+	        return predecessorNode.getThisPredecessor();
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		} catch (NotBoundException e) {
+			e.printStackTrace();
+		}
         return null;
     }
 
     @Override
     public NodeInfo getMyInfo(){
-        return myInfo;
+        return myInfo_;
     }
-    /*
+    
+    @Override
+    public Hashtable<String, String> getKeyStore() {
+    	return dictionary_;
+    }
+    
     @Override
     public void updateSuccessor(NodeInfo successor) {
-        mySuccessor = successor;
-    }*/
-
-    public void setDictionary_(Hashtable dictionary_) {
-        this.dictionary_ = dictionary_;
+        mySuccessor_ = successor;
+    }
+    
+    @Override
+    public NodeInfo getThisPredecessor() {
+    	return myPredecessor_;
+    }
+    
+    @Override
+    public NodeInfo getThisSuccessor() {
+    	return mySuccessor_;
     }
 
-    public Hashtable getDictionary_() {
-        return dictionary_;
-    }
-
-    public void setFingerTable_(){
-
-    }
-
-    public String[] getFingerTable_(){
-
-        return fingerTable_;
-
-    }
-
-    public String sha1String(String input) throws NoSuchAlgorithmException {
-        MessageDigest mDigest = MessageDigest.getInstance("SHA1");
-        byte[] result = mDigest.digest(input.getBytes());
-        StringBuffer sb = new StringBuffer();
-        for (int i = 0; i < result.length; i++) {
-            sb.append(Integer.toString((result[i] & 0xff) + 0x100, 16).substring(1));
+    @Override
+    public void fixFingers() {
+    	for(int i = 0; i < fingerTable_.length; ++i){
+            fingerTable_[i] = successor(getMyInfo().nodeId_.add(Utils.power(2,i))).nodeURL_;
         }
-
-        return sb.toString();
     }
-
-    public BigInteger sha1BigInt(String input) throws NoSuchAlgorithmException {
-        MessageDigest mDigest = MessageDigest.getInstance("SHA1");
-        byte[] result = mDigest.digest(input.getBytes());
-        BigInteger bi = new BigInteger(1, result);
-        return bi;
+    
+    @Override
+    public FindNodeResponsePair find_node(String key, boolean needTrace) {
+    	
+    	if(!isMasterNode_) {
+    		logger.severe("I am not a master to serve find_node request !!!");
+    		return null;
+    	}
+    	
+    	StringBuilder response = new StringBuilder();
+    	NodeInfo successor = null;
+    	
+    	try {
+    		if(needTrace) response.append("Finding the true node which holds data for key {" + key +"}")
+    				.append(System.getProperty("line.separator"));
+			
+    		successor = masterNode_.successor(Utils.sha1BigInt(key));
+    		if(needTrace) response.append("True node holding data for key {" + key +"} is {" + successor.nodeURL_ + "}")
+					.append(System.getProperty("line.separator"));
+    		
+    		logger.info("True node holding data for key {" + key +"} is {" + successor.nodeURL_ + "}");
+    		
+    	} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+			if(needTrace) response.append(e.getMessage())
+					.append(System.getProperty("line.separator"));
+		}
+    	
+    	return new FindNodeResponsePair(successor, response.toString());
+    	
     }
-
-    public String[] fixFingers(BigInteger id){
-
+    
+    @Override
+	public String getFormattedNodeDetails() {
+    	
+    	// TODO: .append(160 bit hex key).append(","). are we capturing all the
+		// information that we are supposed to print ??
+    	String keyInHex = new BigInteger(new StringBuilder()
+				.append(getMyInfo().nodeId_).toString(), 16).toString();
+		
+		StringBuilder fd = new StringBuilder();
+		fd.append("Node ID: ").append(getMyInfo().nodeNum_).append(", ")
+				.append("160-bit key: ").append(keyInHex).append(", ")
+				.append("Successor: ").append(getThisSuccessor().nodeId_).append(", ")
+				.append("Predecessor: ").append(getThisPredecessor().nodeId_).append(", ")
+				.append("Number of Entries: ").append(getKeyStore().size());
+		
+		return fd.toString();
+	}
+   
+    public void printRingStructure() {
+    	
+    	// we will accumulate information from all nodes and then print the ring structure
+		try {
+			
+			StringBuilder ringStructure = new StringBuilder();
+			ringStructure.append(masterNode_.getFormattedNodeDetails())
+					.append(System.getProperty("line.separator"));
+			
+			Registry registry = LocateRegistry.getRegistry();			
+			NodeInfo currNodeInfo = masterNode_.getThisSuccessor();
+			
+			while(!currNodeInfo.nodeId_.equals(masterNode_.getMyInfo().nodeId_)) {
+				
+				ChordInterface currNode = (ChordInterface) registry.lookup(currNodeInfo.nodeURL_);
+				ringStructure.append(currNode.getFormattedNodeDetails())
+							 .append(System.getProperty("line.separator"));
+				currNodeInfo = currNode.getThisSuccessor();
+				
+			}
+			logger.info("Ring structure is -> " + ringStructure.toString());
+			
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		} catch (NotBoundException e) {
+			e.printStackTrace();
+		}
+        
+    }
+    
+    public String[] computeFingerTableFor(BigInteger id){
         String[] fingerTable = new String[160];
-
         for(int i=0;i<160;i++){
-            fingerTable[i] = successor(id.add(power(2,i))).nodeURL;
+            fingerTable[i] = successor(id.add(Utils.power(2,i))).nodeURL_;
         }
-
         return fingerTable;
     }
 
-    public BigInteger power(Integer base, Integer exponent){
+    public static void main(String[] args) {
 
-        BigInteger result = BigInteger.ONE;
-
-        for(int i=1;i<=exponent;i++){
-            result = result.multiply(BigInteger.valueOf(base));
-        }
-
-        return result;
-
-    }
-
-    public static void main(){
-
-        ChordInterface node = new Node("node0");
-
+    	if(args.length != 2) {
+    		System.out.println("Incorrect number of arguments. Please provide the following two arguments <currentNodeURL> <masterNodeURL>");
+    		return;
+    	}
+    	
+    	String nodeURL = args[0].trim();
+    	MASTER_NODE_URL = args[1].trim();
+    	
+        ChordInterface node = new Node(nodeURL);
         try {
-            ChordInterface stub =
-                    (ChordInterface) UnicastRemoteObject.exportObject(node, 0);
+            ChordInterface stub = (ChordInterface) UnicastRemoteObject.exportObject(node, 0);
             Registry registry = LocateRegistry.getRegistry();
-            registry.rebind("node0", stub);
+            registry.rebind(nodeURL, stub);
 
         }
         catch (RemoteException e){
