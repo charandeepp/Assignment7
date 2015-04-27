@@ -131,37 +131,34 @@ public class Node implements ChordInterface{
 
         NodeInfo successor = successor(hashKey);
         
-        JoinResponse result = new JoinResponse();
-        
-        result.newNodeInfo.nodeURL_ = url;
         response.append("Updating the URL of the new node to {" + url + "}")
 				.append(System.getProperty("line.separator"));
         
-        result.newNodeInfo.nodeId_ = hashKey;
         response.append("Updating the nodeID of the new node to {" + hashKey + "}")
 				.append(System.getProperty("line.separator"));
         
-        result.newNodeInfo.nodeNum_ = globalNodeCount_;
+        Integer gc = globalNodeCount_;
         globalNodeCount_++;
         
-        result.successor = successor;
         response.append("Updating the successor of the new node to {" + successor.nodeURL_ + "}")
         		.append(System.getProperty("line.separator"));
         
-        result.predecessor = predecessor(hashKey);
-        response.append("Updating the predecessor of the new node to {" + result.predecessor.nodeURL_ + "}")
+        NodeInfo pred = predecessor(hashKey);
+        response.append("Updating the predecessor of the new node to {" + pred.nodeURL_ + "}")
 				.append(System.getProperty("line.separator"));
         
-        result.fingerTable = computeFingerTableFor(hashKey);
+        String[] ft = computeFingerTableFor(hashKey);
         response.append("Updating the finger table of the new node to")
 				.append(System.getProperty("line.separator"));
         
         // we should update the predecessor information in the new node's successor
         ChordInterface successorNode;
+        Node.NodeInfo nodeInfo;
         try {
         	Registry registry = LocateRegistry.getRegistry();
             successorNode = (ChordInterface) registry.lookup(successor.nodeURL_);
-            successorNode.notify(result.newNodeInfo);
+            nodeInfo = new NodeInfo(url, hashKey, gc);
+            successorNode.notify(nodeInfo);
             response.append("Updating the predecessor of the node following the new node {")
 					.append(successor.nodeURL_).append("}.")
 					.append(System.getProperty("line.separator"));
@@ -176,10 +173,10 @@ public class Node implements ChordInterface{
         ChordInterface predecessorNode;
         try {
         	Registry registry = LocateRegistry.getRegistry();
-            predecessorNode = (ChordInterface) registry.lookup(result.predecessor.nodeURL_);
-            predecessorNode.updateSuccessor(result.newNodeInfo);
+            predecessorNode = (ChordInterface) registry.lookup(pred.nodeURL_);
+            predecessorNode.updateSuccessor(nodeInfo);
 			response.append("Updating the successor of the node preceding the new node {")
-					.append(result.predecessor.nodeURL_).append("}.")
+					.append(pred.nodeURL_).append("}.")
 					.append(System.getProperty("line.separator"));
         }
         catch(Exception e){
@@ -196,14 +193,12 @@ public class Node implements ChordInterface{
 				.append(System.getProperty("line.separator"));
         redistributeKeys(successorNode);
         
-        result.status = JoinResponse.Status.DONE;
         response.append("Updating the status of the response to DONE")
 				.append(System.getProperty("line.separator"));
         
-        result.response = response.toString();
         logger.info(response.toString());
         
-        return result;
+        return new JoinResponse(JoinResponse.Status.DONE, response.toString(), nodeInfo, successor, pred, ft);
     }
 
     public void redistributeFingerTables(StringBuilder response) {
