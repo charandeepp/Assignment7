@@ -54,7 +54,13 @@ public class Client {
 	private static void insertWordsInDHT(ChordInterface node0, Registry registry) {
 
 		for(String word : wordMeaningStore_.keySet()) {
-			FindNodeResponsePair fp = node0.find_node(word, true);
+			FindNodeResponsePair fp;
+			try {
+				fp = node0.find_node(word, true);
+			} catch (RemoteException e1) {
+				e1.printStackTrace();
+				return;
+			}
 			try {
 				logger.info("Insert find_node trace for word {" + word + "} is : " + fp.response_);
 				ChordInterface insertNode = (ChordInterface) registry.lookup(fp.node_.nodeURL_);
