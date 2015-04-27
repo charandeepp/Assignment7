@@ -61,6 +61,7 @@ public class Node implements ChordInterface{
     
     public Node(String url){
 
+    	logger = ServerLogger.logger(url.hashCode());
         dictionary_ = new Hashtable<String,String>();
         fingerTable_ = new String[160];
         Arrays.fill(fingerTable_, "");
@@ -89,7 +90,6 @@ public class Node implements ChordInterface{
                     masterNode_.join_done(myInfo_);
                 }
             }
-            logger = ServerLogger.logger(myInfo_.nodeNum_);
         }
         catch (NoSuchAlgorithmException e){
             e.printStackTrace();
