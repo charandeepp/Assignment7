@@ -120,8 +120,8 @@ public class Node implements ChordInterface{
         response.append("Updating the nodeID of the new node to {" + hashKey + "}")
 				.append(System.getProperty("line.separator"));
         
-        Integer gc = globalNodeCount_;
         globalNodeCount_++;
+        Integer gc = globalNodeCount_;
         
         response.append("Updating the successor of the new node to {" + successor.nodeURL_ + "}")
         		.append(System.getProperty("line.separator"));
@@ -131,7 +131,7 @@ public class Node implements ChordInterface{
 				.append(System.getProperty("line.separator"));
         
         String[] ft = computeFingerTableFor(hashKey);
-        response.append("Updating the finger table of the new node to")
+        response.append("Updating the finger table of the new node to ").append(ft.toString())
 				.append(System.getProperty("line.separator"));
         
         // we should update the predecessor information in the new node's successor
