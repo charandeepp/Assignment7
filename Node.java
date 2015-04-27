@@ -257,15 +257,20 @@ public class Node implements ChordInterface{
     public NodeInfo successor(BigInteger id) throws RemoteException {
     	
         for(int i=0;i<fingerTable_.length; i++){
+        	
         	if(fingerTable_[i].isEmpty()) {
         		System.out.println("Returning self Info");
         		return myInfo_;
         	}
+        	
         	if(myInfo_.nodeId_ == getThisSuccessor().nodeId_){
         		System.out.println("Returning successor");
         		return myInfo_;
         	}
-            int compare_value = id.subtract(myInfo_.nodeId_).compareTo(Utils.power(2,i));
+        	
+        	BigInteger value = (id.subtract(myInfo_.nodeId_).compareTo(BigInteger.ZERO) < 0) ? 
+        			Utils.power(2, 160).add(id.subtract(myInfo_.nodeId_)): id.subtract(myInfo_.nodeId_);
+            int compare_value = value.compareTo(Utils.power(2,i));
 
             if(compare_value >0) {
                 continue;
