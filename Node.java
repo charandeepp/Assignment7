@@ -19,6 +19,8 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.logging.Logger;
 
+import com.sun.corba.se.impl.javax.rmi.CORBA.Util;
+
 /**
  * 
  * @author rkandur
@@ -64,7 +66,7 @@ public class Node implements ChordInterface{
         fingerTable_ = new String[160];
 
         try {
-            if (url.compareTo(MASTER_NODE_URL) == 0) {
+            if (url.equals(MASTER_NODE_URL)) {
             	isMasterNode_ = true;
                 myInfo_ = new NodeInfo(url, Utils.sha1BigInt(url), 0);
                 myPredecessor_ = this.myInfo_;
@@ -280,6 +282,10 @@ public class Node implements ChordInterface{
     @Override
     public NodeInfo successor(BigInteger id) throws RemoteException {
     	
+    	for(int i=0;i<fingerTable_.length; i++){
+    		System.out.println("i = " + fingerTable_[i]);
+    	}
+    	
         for(int i=0;i<fingerTable_.length; i++){
         	if(fingerTable_[i].isEmpty()) {
         		return myInfo_;
@@ -416,6 +422,7 @@ public class Node implements ChordInterface{
     		if(needTrace) response.append("Finding the true node which holds data for key {" + key +"}")
     				.append(System.getProperty("line.separator"));
 			
+    		System.out.println("finfing successor for " + Utils.sha1BigInt(key));
     		successor = masterNode_.successor(Utils.sha1BigInt(key));
     		if(needTrace) response.append("True node holding data for key {" + key +"} is {" + successor.nodeURL_ + "}")
 					.append(System.getProperty("line.separator"));
