@@ -74,6 +74,31 @@ public class Client {
 	}
 	
 	/*
+	 * Inserts all the words into a DHT 
+	 */
+	private static void insertWordInDHT(ChordInterface node0, Registry registry, String word, String meaning, boolean withTrace) {
+
+		FindNodeResponsePair fp;
+		try {
+			fp = node0.find_node(word, withTrace);
+			if(withTrace) {
+				logger.info("Lookup find_node trace for word {" + word + "} is : " + fp.response_);
+			}
+		} catch (RemoteException e1) {
+			e1.printStackTrace();
+			return;
+		}
+		try {
+			ChordInterface insertNode = (ChordInterface) registry.lookup(fp.nodeUrl_);
+			insertNode.insertKey(word, meaning);
+			logger.info("Successfully inserted word {" + word + "} in the DHT.");
+		} catch (RemoteException | NotBoundException e) {
+			logger.severe("Could not insert word {" + word + "} in DHT.");
+		}
+        
+	}
+	
+	/*
 	 * method to lookup a specific work in a DHT
 	 */
 	private static void lookupinDHT(String word, ChordInterface node0, Registry registry, boolean withTrace) {
@@ -108,7 +133,9 @@ public class Client {
 			.append("1. print ring structure").append(System.getProperty("line.separator"))
 			.append("2. lookup word without log trace").append(System.getProperty("line.separator"))
 			.append("3. lookup with log trace").append(System.getProperty("line.separator"))
-			.append("4. Exit").append(System.getProperty("line.separator"));
+			.append("4. insert with log trace").append(System.getProperty("line.separator"))
+			.append("5. insert without log trace").append(System.getProperty("line.separator"))
+			.append("6. Exit").append(System.getProperty("line.separator"));
 		System.out.println(sb.toString());
 	}
 	
@@ -176,7 +203,21 @@ public class Client {
 								}
 								break; 
 							}
-					case 4: { 
+					case 4: {
+								logger.info("Enter the word to insert: ");
+								String word = br.readLine();
+								logger.info("Enter the meaning of the word to insert: ");
+								String meaning = br.readLine();
+								insertWordInDHT(masterNode, registry, word, meaning, true);
+							}
+					case 5: {
+								logger.info("Enter the word to insert: ");
+								String word = br.readLine();
+								logger.info("Enter the meaning of the word to insert: ");
+								String meaning = br.readLine();
+								insertWordInDHT(masterNode, registry, word, meaning, false);
+							}
+					case 6: { 
 								System.exit(0);
 								break; 
 							}
