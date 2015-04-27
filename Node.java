@@ -251,24 +251,19 @@ public class Node implements ChordInterface{
     @Override
     public NodeInfo successor(BigInteger id) throws RemoteException {
     	
-    	System.out.println("Successor for id " + id);
-    	
         for(int i=0;i<fingerTable_.length; i++){
         	
         	if(fingerTable_[i].isEmpty()) {
-        		System.out.println("Returning self Info");
         		return myInfo_;
         	}
         	
         	if(myInfo_.nodeId_ == getThisSuccessor().nodeId_){
-        		System.out.println("Returning successor");
         		return myInfo_;
         	}
         	
         	BigInteger value = (id.subtract(myInfo_.nodeId_).compareTo(BigInteger.ZERO) < 0) ? 
         			Utils.power(2, 160).add(id.subtract(myInfo_.nodeId_)): id.subtract(myInfo_.nodeId_);
             int compare_value = value.compareTo(Utils.power(2,i));
-            System.out.println("Compare Value = " + compare_value);
 
             if(compare_value >0) {
                 continue;
@@ -287,7 +282,6 @@ public class Node implements ChordInterface{
                 catch (NotBoundException e){
                     System.out.println(e);
                 }
-                System.out.println("In > 0 and calling successor on" + successorNode.getMyInfo().nodeURL_);
                 return successorNode.successor(id);
             }
             else{
