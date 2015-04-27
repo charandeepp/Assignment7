@@ -56,7 +56,7 @@ public class Node implements ChordInterface{
     private boolean joinLock_ = false;
     
     private ChordInterface masterNode_;
-    private static Logger logger = ServerLogger.logger();
+    private static Logger logger;
     private boolean isMasterNode_ = Boolean.FALSE;
     
     public Node(String url){
@@ -89,6 +89,7 @@ public class Node implements ChordInterface{
                     masterNode_.join_done(myInfo_);
                 }
             }
+            logger = ServerLogger.logger(myInfo_.nodeNum_);
         }
         catch (NoSuchAlgorithmException e){
             e.printStackTrace();

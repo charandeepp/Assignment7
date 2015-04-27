@@ -21,10 +21,6 @@ public class ServerLogger {
 		
 	}
 	
-	public static Logger logger() {
-		return logger_;
-	}
-	
 	public static Logger logger(int pId) {
 	
 		/**
