@@ -27,7 +27,7 @@ public interface ChordInterface extends Remote{
     
     public void fixFingers() throws RemoteException;
     public Hashtable<String, String> getKeyStore()  throws RemoteException;
-    public void printRingStructure() throws RemoteException;
+    public String printRingStructure() throws RemoteException;
 	public String getFormattedNodeDetails() throws RemoteException;
     
 }

@@ -283,10 +283,6 @@ public class Node implements ChordInterface{
     @Override
     public NodeInfo successor(BigInteger id) throws RemoteException {
     	
-    	for(int i=0;i<fingerTable_.length; i++){
-    		System.out.println("i = " + fingerTable_[i]);
-    	}
-    	
         for(int i=0;i<fingerTable_.length; i++){
         	if(fingerTable_[i].isEmpty()) {
         		return myInfo_;
@@ -462,12 +458,12 @@ public class Node implements ChordInterface{
 		return fd.toString();
 	}
    
-    public void printRingStructure() throws RemoteException {
+    public String printRingStructure() throws RemoteException {
     	
     	// we will accumulate information from all nodes and then print the ring structure
-		try {
+    	StringBuilder ringStructure = new StringBuilder();
+    	try {
 			
-			StringBuilder ringStructure = new StringBuilder();
 			ringStructure.append(masterNode_.getFormattedNodeDetails())
 					.append(System.getProperty("line.separator"));
 			
@@ -489,7 +485,7 @@ public class Node implements ChordInterface{
 		} catch (NotBoundException e) {
 			e.printStackTrace();
 		}
-        
+    	return ringStructure.toString();
     }
     
     public String[] computeFingerTableFor(BigInteger id) throws RemoteException {

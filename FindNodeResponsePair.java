@@ -18,10 +18,6 @@ public class FindNodeResponsePair implements Serializable {
 	// response of find_node if applicable
 	String response_;
 	
-	/*public FindNodeResponsePair(Node.NodeInfo n, String resp) {
-		node_ = n;
-		response_ = resp;
-	}*/
 	public FindNodeResponsePair(BigInteger nodeId, Integer nodeNum,
 			String nodeUrl, String resposne) {
 		nodeId_ = nodeId;

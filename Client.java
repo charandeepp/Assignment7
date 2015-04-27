@@ -146,7 +146,7 @@ public class Client {
 				switch(Integer.parseInt(inputChoice)) 
 				{
 					case 1: { 
-								node0.printRingStructure();
+								System.out.println(node0.printRingStructure());
 								break; 
 							}
 					case 2: {
