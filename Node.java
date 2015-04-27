@@ -279,7 +279,11 @@ public class Node implements ChordInterface{
 
     @Override
     public NodeInfo successor(BigInteger id) throws RemoteException {
-        for(int i=0;i<160;i++){
+    	
+        for(int i=0;i<fingerTable_.length; i++){
+        	if(fingerTable_[i].isEmpty()) {
+        		return myInfo_;
+        	}
             int compare_value = id.subtract(myInfo_.nodeId_).compareTo(Utils.power(2,i));
 
             if(compare_value >0) {
