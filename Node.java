@@ -104,7 +104,7 @@ public class Node implements ChordInterface{
      * used to join a new node in the Chord ring
      */
     @Override
-    public JoinResponse join(String url){
+    public JoinResponse join(String url) throws RemoteException {
     	
         if(joinLock_==false){
         	logger.info("Node is Busy, Please try later !");
@@ -273,12 +273,12 @@ public class Node implements ChordInterface{
     }
     
     @Override
-    public String lookup(String word){
+    public String lookup(String word) throws RemoteException {
         return dictionary_.get(word);
     }
 
     @Override
-    public NodeInfo successor(BigInteger id) {
+    public NodeInfo successor(BigInteger id) throws RemoteException {
         for(int i=0;i<160;i++){
             int compare_value = id.subtract(myInfo_.nodeId_).compareTo(Utils.power(2,i));
 
@@ -323,7 +323,7 @@ public class Node implements ChordInterface{
     }
 
     @Override
-    public void join_done(NodeInfo newNode) {
+    public void join_done(NodeInfo newNode) throws RemoteException {
     	if(!isMasterNode_) {
     		logger.severe("I am not a master to serve join_done request !!!");
     		return;
@@ -332,17 +332,17 @@ public class Node implements ChordInterface{
     }
 
     @Override
-    public void insertKey(String word, String meaning) {
+    public void insertKey(String word, String meaning) throws RemoteException {
         dictionary_.put(word,meaning);
     }
     
     @Override
-    public void removeKey(String word) {
+    public void removeKey(String word) throws RemoteException {
         dictionary_.remove(word);
     }
 
     @Override
-    public void notify(NodeInfo predecessor) {
+    public void notify(NodeInfo predecessor) throws RemoteException {
 		if (myPredecessor_ == null || 
 				((predecessor.nodeId_.compareTo(myPredecessor_.nodeId_) < 0) && 
 				(predecessor.nodeId_.compareTo(myInfo_.nodeId_) > 0 || myInfo_.nodeNum_ == 0))) {
@@ -351,7 +351,7 @@ public class Node implements ChordInterface{
     }
 
     @Override
-    public NodeInfo predecessor(BigInteger id) {
+    public NodeInfo predecessor(BigInteger id) throws RemoteException {
 		try {
 			Node.NodeInfo successor = successor(id);
 	    	Registry registry = LocateRegistry.getRegistry();
@@ -366,39 +366,39 @@ public class Node implements ChordInterface{
     }
 
     @Override
-    public NodeInfo getMyInfo(){
+    public NodeInfo getMyInfo() throws RemoteException {
         return myInfo_;
     }
     
     @Override
-    public Hashtable<String, String> getKeyStore() {
+    public Hashtable<String, String> getKeyStore() throws RemoteException {
     	return dictionary_;
     }
     
     @Override
-    public void updateSuccessor(NodeInfo successor) {
+    public void updateSuccessor(NodeInfo successor) throws RemoteException {
         mySuccessor_ = successor;
     }
     
     @Override
-    public NodeInfo getThisPredecessor() {
+    public NodeInfo getThisPredecessor() throws RemoteException {
     	return myPredecessor_;
     }
     
     @Override
-    public NodeInfo getThisSuccessor() {
+    public NodeInfo getThisSuccessor() throws RemoteException {
     	return mySuccessor_;
     }
 
     @Override
-    public void fixFingers() {
+    public void fixFingers() throws RemoteException {
     	for(int i = 0; i < fingerTable_.length; ++i){
             fingerTable_[i] = successor(getMyInfo().nodeId_.add(Utils.power(2,i))).nodeURL_;
         }
     }
     
     @Override
-    public FindNodeResponsePair find_node(String key, boolean needTrace) {
+    public FindNodeResponsePair find_node(String key, boolean needTrace) throws RemoteException {
     	
     	if(!isMasterNode_) {
     		logger.severe("I am not a master to serve find_node request !!!");
@@ -429,7 +429,7 @@ public class Node implements ChordInterface{
     }
     
     @Override
-	public String getFormattedNodeDetails() {
+	public String getFormattedNodeDetails() throws RemoteException {
     	
     	// TODO: .append(160 bit hex key).append(","). are we capturing all the
 		// information that we are supposed to print ??
@@ -447,7 +447,7 @@ public class Node implements ChordInterface{
 		return fd.toString();
 	}
    
-    public void printRingStructure() {
+    public void printRingStructure() throws RemoteException {
     	
     	// we will accumulate information from all nodes and then print the ring structure
 		try {
@@ -477,7 +477,7 @@ public class Node implements ChordInterface{
         
     }
     
-    public String[] computeFingerTableFor(BigInteger id){
+    public String[] computeFingerTableFor(BigInteger id) throws RemoteException {
         String[] fingerTable = new String[160];
         for(int i=0;i<160;i++){
             fingerTable[i] = successor(id.add(Utils.power(2,i))).nodeURL_;
