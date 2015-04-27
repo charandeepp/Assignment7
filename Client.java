@@ -63,7 +63,7 @@ public class Client {
 			}
 			try {
 				logger.info("Insert find_node trace for word {" + word + "} is : " + fp.response_);
-				ChordInterface insertNode = (ChordInterface) registry.lookup(fp.node_.nodeURL_);
+				ChordInterface insertNode = (ChordInterface) registry.lookup(fp.nodeUrl_);
 				insertNode.insertKey(word, wordMeaningStore_.get(word));
 				logger.info("Successfully inserted word {" + word + "} in the DHT.");
 			} catch (RemoteException | NotBoundException e) {
@@ -85,7 +85,7 @@ public class Client {
 			if(withTrace) {
 				logger.info("Lookup find_node trace for word {" + word + "} is : " + fp.response_);
 			}
-			ChordInterface lookupNode = (ChordInterface) registry.lookup(fp.node_.nodeURL_);
+			ChordInterface lookupNode = (ChordInterface) registry.lookup(fp.nodeUrl_);
 			meaning = lookupNode.lookup(word);
 		} catch (AccessException e) {
 			e.printStackTrace();

@@ -439,7 +439,7 @@ public class Node implements ChordInterface{
 					.append(System.getProperty("line.separator"));
 		}
     	
-    	return new FindNodeResponsePair(successor, response.toString());
+    	return new FindNodeResponsePair(successor.nodeId_, successor.nodeNum_, successor.nodeURL_, response.toString());
     	
     }
     
