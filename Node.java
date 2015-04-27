@@ -53,7 +53,7 @@ public class Node implements ChordInterface{
 
     private Hashtable<String,String> dictionary_;
     private String[] fingerTable_;
-    private boolean joinLock_ = false;
+    private boolean joinLock_ = true;
     
     private ChordInterface masterNode_;
     private static Logger logger;
