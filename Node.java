@@ -70,7 +70,6 @@ public class Node implements ChordInterface{
                     myPredecessor_ = joinResponse.predecessor;
                     mySuccessor_ = joinResponse.successor;
                     fingerTable_ = joinResponse.fingerTable;
-                    masterNode_.join_done(myInfo_);
                 }
             }
         }
@@ -171,16 +170,6 @@ public class Node implements ChordInterface{
 		// we need to reorganize the finger table and the keys information
 		// after the new node joins
         System.out.println(response.toString());
-        redistributeFingerTables(response, predecessorNode.getMyInfo(), gc);
-        
-        response.append("Redistributing the keys after the new node has joined !")
-				.append(System.getProperty("line.separator"));
-        redistributeKeys(successorNode);
-        
-        response.append("Updating the status of the response to DONE")
-				.append(System.getProperty("line.separator"));
-        
-        logger.info(response.toString());
         
         return new JoinResponse(JoinResponse.Status.DONE, response.toString(), nodeInfo, successor, pred, ft);
     }
@@ -192,6 +181,7 @@ public class Node implements ChordInterface{
     	}
 
     	System.out.println("In redistr of " + startNodeInfo.nodeURL_);
+    	
     	// we will just be adjusting the fingers of all the nodes in the ring
 		try {
 			
@@ -217,19 +207,20 @@ public class Node implements ChordInterface{
         
     }
     
-    public void redistributeKeys(ChordInterface successor) {
+    public void redistributeKeys(NodeInfo successorInfo) {
     	
 		try {
-
+			
 			// after a new node has joined, keys which earlier belonged to this
 			// node might belong to the next node, i.e., the successor in the
 			// ring. We need to slide these keys to the next node.
 			// Since only the keys which are neighbors to the new node might
 			// need keys to be redistributed, we can just do this for them
 			Registry registry = LocateRegistry.getRegistry();
-			ChordInterface newNode = (ChordInterface) registry.lookup(successor.getThisPredecessor().nodeURL_);
+			ChordInterface succNode = (ChordInterface) registry.lookup(successorInfo.nodeURL_);
+			ChordInterface newNode = (ChordInterface) registry.lookup(succNode.getThisPredecessor().nodeURL_);
 			
-			Hashtable<String, String> keyStore = successor.getKeyStore();
+			Hashtable<String, String> keyStore = succNode.getKeyStore();
 			HashMap<String, String> keysToBeMoved = new HashMap<String, String>();
 			for(String key : keyStore.keySet()) {
 				// we should move only if the key value is < newNodeId
@@ -239,7 +230,7 @@ public class Node implements ChordInterface{
 			}
 			for(String key: keysToBeMoved.keySet()) {
 				newNode.insertKey(key, keysToBeMoved.get(key));
-				successor.removeKey(key);
+				succNode.removeKey(key);
 			}
 			
 		} catch (RemoteException e) {
@@ -328,6 +319,23 @@ public class Node implements ChordInterface{
     		logger.severe("I am not a master to serve join_done request !!!");
     		return;
     	}
+    	
+    	StringBuilder response = new StringBuilder();
+    	Registry registry = LocateRegistry.getRegistry();
+        ChordInterface currNode;
+		try {
+			currNode = (ChordInterface) registry.lookup(newNode.nodeURL_);
+			redistributeFingerTables(response, currNode.getThisPredecessor(), globalNodeCount_-1);
+			redistributeKeys(currNode.getThisSuccessor());
+		} catch (NotBoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        
+        response.append("Updating the status of the response to DONE")
+				.append(System.getProperty("line.separator"));
+        
+        logger.info(response.toString());
         joinLock_ = true;
     }
 
@@ -509,11 +517,16 @@ public class Node implements ChordInterface{
             ChordInterface stub = (ChordInterface) UnicastRemoteObject.exportObject(node, 0);
             Registry registry = LocateRegistry.getRegistry();
             registry.rebind(nodeURL, stub);
+            
+            ChordInterface master = (ChordInterface) registry.lookup(MASTER_NODE_URL);
+            master.join_done(node.getMyInfo());
 
         }
         catch (RemoteException e){
             e.printStackTrace();
-        }
+        } catch (NotBoundException e) {
+			e.printStackTrace();
+		}
 
     }
 }
