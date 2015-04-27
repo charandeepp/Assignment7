@@ -181,14 +181,11 @@ public class Node implements ChordInterface{
     		return;
     	}
 
-    	System.out.println("In redistr of " + startNodeInfo.nodeURL_);
-    	
     	// we will just be adjusting the fingers of all the nodes in the ring
 		try {
 			
 			Registry registry = LocateRegistry.getRegistry();
 			ChordInterface startNode = (ChordInterface) registry.lookup(startNodeInfo.nodeURL_);
-			System.out.println("Found start node !!");
 			for(int i=1;i<160;i++){
 				ChordInterface succesorNode = (ChordInterface) registry.lookup(startNode.getThisSuccessor().nodeURL_);
 				succesorNode.successor(startNodeInfo.nodeId_.add(Utils.power(2, i)));
@@ -277,10 +274,10 @@ public class Node implements ChordInterface{
                     successorNode = (ChordInterface) registry.lookup(fingerTable_[i-1]);
                 }
                 catch(RemoteException e){
-                    System.out.println(e);
+                    logger.severe(e.getMessage());
                 }
                 catch (NotBoundException e){
-                    System.out.println(e);
+                	logger.severe(e.getMessage());
                 }
                 return successorNode.successor(id);
             }
@@ -293,13 +290,12 @@ public class Node implements ChordInterface{
                     successorNode = (ChordInterface) registry.lookup(fingerTable_[i]);
                 }
                 catch(RemoteException e){
-                    System.out.println(e);
+                	logger.severe(e.getMessage());
                 }
                 catch (NotBoundException e){
-                    System.out.println(e);
+                	logger.severe(e.getMessage());
                 }
                 
-                System.out.println("In = 0 and calling returning successor " + successorNode.getMyInfo().nodeURL_);
                 return successorNode.getMyInfo();
             }
 
@@ -401,9 +397,6 @@ public class Node implements ChordInterface{
     				.append(System.getProperty("line.separator"));
 			
     		successor = masterNode_.successor(Utils.sha1BigInt(key));
-    		if(successor == null) {
-    			System.out.println("Successor is NULL !!!!!!!!!!!!!!!");
-    		}
     		if(needTrace) response.append("True node holding data for key {" + key +"} is {" + successor.nodeURL_ + "}")
 					.append(System.getProperty("line.separator"));
     		
