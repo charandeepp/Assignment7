@@ -518,8 +518,10 @@ public class Node implements ChordInterface{
             Registry registry = LocateRegistry.getRegistry();
             registry.rebind(nodeURL, stub);
             
-            ChordInterface master = (ChordInterface) registry.lookup(MASTER_NODE_URL);
-            master.join_done(node.getMyInfo());
+            if(!nodeURL.equals(MASTER_NODE_URL)) {
+	            ChordInterface master = (ChordInterface) registry.lookup(MASTER_NODE_URL);
+	            master.join_done(node.getMyInfo());
+            }
 
         }
         catch (RemoteException e){
