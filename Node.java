@@ -15,11 +15,10 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.logging.Logger;
-
-import com.sun.corba.se.impl.javax.rmi.CORBA.Util;
 
 /**
  * 
@@ -64,6 +63,7 @@ public class Node implements ChordInterface{
 
         dictionary_ = new Hashtable<String,String>();
         fingerTable_ = new String[160];
+        Arrays.fill(fingerTable_, "");
 
         try {
             if (url.equals(MASTER_NODE_URL)) {
