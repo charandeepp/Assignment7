@@ -34,4 +34,13 @@ public class JoinResponse implements Serializable{
     	response = r;
     }
     
+    public JoinResponse(Status s, String r, Node.NodeInfo info, Node.NodeInfo succ, Node.NodeInfo pred, String[] ft) {
+    	status = s;
+    	response = r;
+    	newNodeInfo = info;
+    	successor =succ;
+    	predecessor = pred;
+    	fingerTable = ft;
+    }
+    
 }
