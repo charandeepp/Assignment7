@@ -209,6 +209,7 @@ public class Client {
 								logger.info("Enter the meaning of the word to insert: ");
 								String meaning = br.readLine();
 								insertWordInDHT(masterNode, registry, word, meaning, true);
+								break;
 							}
 					case 5: {
 								logger.info("Enter the word to insert: ");
@@ -216,6 +217,7 @@ public class Client {
 								logger.info("Enter the meaning of the word to insert: ");
 								String meaning = br.readLine();
 								insertWordInDHT(masterNode, registry, word, meaning, false);
+								break;
 							}
 					case 6: { 
 								System.exit(0);
