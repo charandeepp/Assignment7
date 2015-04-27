@@ -197,6 +197,7 @@ public class Node implements ChordInterface{
 			
 			Registry registry = LocateRegistry.getRegistry();
 			ChordInterface startNode = (ChordInterface) registry.lookup(startNodeInfo.nodeURL_);
+			System.out.println("Found start node !!");
 			for(int i=1;i<160;i++){
 				ChordInterface succesorNode = (ChordInterface) registry.lookup(startNode.getThisSuccessor().nodeURL_);
 				System.out.println("Successor is " + succesorNode.getMyInfo().nodeURL_);
