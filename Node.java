@@ -265,6 +265,9 @@ public class Node implements ChordInterface{
         	if(fingerTable_[i].isEmpty()) {
         		return myInfo_;
         	}
+        	if(myInfo_.nodeId_ == getThisSuccessor().nodeId_){
+        		return myInfo_;
+        	}
             int compare_value = id.subtract(myInfo_.nodeId_).compareTo(Utils.power(2,i));
 
             if(compare_value >0) {
