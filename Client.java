@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 public class Client {
 
 	private static final String WORDS_FILE_PATH = "words.txt";
-	private static String NODE0_URL = "node0";
+	private static String MASTER_NODE_URL = "node0";
 	private static Logger logger = ClientLogger.logger();
 	
 	private static HashMap<String, String> wordMeaningStore_ = new HashMap<String, String>();
@@ -114,17 +114,24 @@ public class Client {
 	
 	public static void main(String[] args) {
 		
-		System.setSecurityManager(new RMISecurityManager());
+		if(args.length != 1) {
+    		System.out.println("Incorrect number of arguments. Please provide the following arguments <masterNodeURL>");
+    		return;
+    	}
+    	
+    	MASTER_NODE_URL = args[0].trim();
+
+    	System.setSecurityManager(new RMISecurityManager());
 		Registry registry;
-		ChordInterface node0;
+		ChordInterface masterNode;
 		try {
 			registry = LocateRegistry.getRegistry();
-			node0 = (ChordInterface) registry.lookup(NODE0_URL);
+			masterNode = (ChordInterface) registry.lookup(MASTER_NODE_URL);
 		} catch (RemoteException e1) {
 			logger.severe("Could not locate remote RMI registry, Exiting !!!");
 			return;
 		} catch (NotBoundException e) {
-			logger.severe("Could not find any binding with name {" + NODE0_URL + "}, Exiting !!!");
+			logger.severe("Could not find any binding with name {" + MASTER_NODE_URL + "}, Exiting !!!");
 			return;
 		}
 		
@@ -132,7 +139,7 @@ public class Client {
 		loadWordMeaningPairs();
 		
 		// insert dictionary words and meanings into DHT
-		insertWordsInDHT(node0, registry);
+		insertWordsInDHT(masterNode, registry);
 		
 		String inputChoice = new String();
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
@@ -146,14 +153,14 @@ public class Client {
 				switch(Integer.parseInt(inputChoice)) 
 				{
 					case 1: { 
-								System.out.println(node0.printRingStructure());
+								System.out.println(masterNode.printRingStructure());
 								break; 
 							}
 					case 2: {
 								try {
 									logger.info("Enter the word to lookup: ");
 									String word = br.readLine();
-									lookupinDHT(word, node0, registry, false);
+									lookupinDHT(word, masterNode, registry, false);
 								} catch (IOException e) {
 									System.out.println("Error while reading the input. Please try again !");
 								}
@@ -163,7 +170,7 @@ public class Client {
 								try {
 									logger.info("Enter the word to lookup: ");
 									String word = br.readLine();
-									lookupinDHT(word, node0, registry, true);
+									lookupinDHT(word, masterNode, registry, true);
 								} catch (IOException e) {
 									System.out.println("Error while reading the input. Please try again !");
 								}
