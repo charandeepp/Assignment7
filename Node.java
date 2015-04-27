@@ -170,6 +170,7 @@ public class Node implements ChordInterface{
 		
 		// we need to reorganize the finger table and the keys information
 		// after the new node joins
+        System.out.println(response.toString());
         redistributeFingerTables(response, predecessorNode.getMyInfo(), gc);
         
         response.append("Redistributing the keys after the new node has joined !")
@@ -189,7 +190,8 @@ public class Node implements ChordInterface{
     	if(iteration <= 0) {
     		return;
     	}
-    	
+
+    	System.out.println("In redistr of " + startNodeInfo.nodeURL_);
     	// we will just be adjusting the fingers of all the nodes in the ring
 		try {
 			
@@ -197,6 +199,7 @@ public class Node implements ChordInterface{
 			ChordInterface startNode = (ChordInterface) registry.lookup(startNodeInfo.nodeURL_);
 			for(int i=1;i<160;i++){
 				ChordInterface succesorNode = (ChordInterface) registry.lookup(startNode.getThisSuccessor().nodeURL_);
+				System.out.println("Successor is " + succesorNode.getMyInfo().nodeURL_);
 				succesorNode.successor(startNodeInfo.nodeId_.add(Utils.power(2, i)));
 			}
 			response.append("Updating the finger table of the node {")
@@ -256,6 +259,8 @@ public class Node implements ChordInterface{
     @Override
     public NodeInfo successor(BigInteger id) throws RemoteException {
     	
+    	System.out.println("Successor for id " + id);
+    	
         for(int i=0;i<fingerTable_.length; i++){
         	
         	if(fingerTable_[i].isEmpty()) {
@@ -271,6 +276,7 @@ public class Node implements ChordInterface{
         	BigInteger value = (id.subtract(myInfo_.nodeId_).compareTo(BigInteger.ZERO) < 0) ? 
         			Utils.power(2, 160).add(id.subtract(myInfo_.nodeId_)): id.subtract(myInfo_.nodeId_);
             int compare_value = value.compareTo(Utils.power(2,i));
+            System.out.println("Compare Value = " + compare_value);
 
             if(compare_value >0) {
                 continue;
@@ -289,6 +295,7 @@ public class Node implements ChordInterface{
                 catch (NotBoundException e){
                     System.out.println(e);
                 }
+                System.out.println("In > 0 and calling successor on" + successorNode.getMyInfo().nodeURL_);
                 return successorNode.successor(id);
             }
             else{
@@ -305,6 +312,8 @@ public class Node implements ChordInterface{
                 catch (NotBoundException e){
                     System.out.println(e);
                 }
+                
+                System.out.println("In = 0 and calling returning successor " + successorNode.getMyInfo().nodeURL_);
                 return successorNode.getMyInfo();
             }
 
