@@ -170,7 +170,7 @@ public class Node implements ChordInterface{
 		
 		// we need to reorganize the finger table and the keys information
 		// after the new node joins
-        redistributeFingerTables(response);
+        redistributeFingerTables(response, predecessorNode.getMyInfo(), gc);
         
         response.append("Redistributing the keys after the new node has joined !")
 				.append(System.getProperty("line.separator"));
@@ -184,32 +184,27 @@ public class Node implements ChordInterface{
         return new JoinResponse(JoinResponse.Status.DONE, response.toString(), nodeInfo, successor, pred, ft);
     }
 
-    public void redistributeFingerTables(StringBuilder response) {
+    public void redistributeFingerTables(StringBuilder response, NodeInfo startNodeInfo, int iteration) {
+    	
+    	if(iteration <= 0) {
+    		return;
+    	}
     	
     	// we will just be adjusting the fingers of all the nodes in the ring
 		try {
-
-			// updating the finger table of master node
-			masterNode_.fixFingers();
-			response.append("Updating the finger table of the node {")
-					.append(masterNode_.getMyInfo().nodeURL_).append("}")
-					.append(System.getProperty("line.separator"));
 			
-			Registry registry = LocateRegistry.getRegistry();			
-			NodeInfo currNodeInfo = masterNode_.getThisSuccessor();
-			
-			while(currNodeInfo.nodeId_ != masterNode_.getMyInfo().nodeId_) {
-				
-				response.append("Updating the finger table of the node {")
-						.append(currNodeInfo.nodeURL_).append("}")
-						.append(System.getProperty("line.separator"));
-				
-				ChordInterface currNode = (ChordInterface) registry.lookup(currNodeInfo.nodeURL_);
-				currNode.fixFingers();
-				currNodeInfo = currNode.getThisSuccessor();
-				
+			Registry registry = LocateRegistry.getRegistry();
+			ChordInterface startNode = (ChordInterface) registry.lookup(startNodeInfo.nodeURL_);
+			for(int i=1;i<160;i++){
+				ChordInterface succesorNode = (ChordInterface) registry.lookup(startNode.getThisSuccessor().nodeURL_);
+				succesorNode.successor(startNodeInfo.nodeId_.add(Utils.power(2, i)));
 			}
-			
+			response.append("Updating the finger table of the node {")
+					.append(startNodeInfo.nodeURL_).append("}")
+					.append(System.getProperty("line.separator"));
+
+			redistributeFingerTables(response, startNode.getThisPredecessor(), --iteration);
+				
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		} catch (NotBoundException e) {
@@ -368,6 +363,7 @@ public class Node implements ChordInterface{
     @Override
     public void updateSuccessor(NodeInfo successor) throws RemoteException {
         mySuccessor_ = successor;
+        fingerTable_[0] = successor.nodeURL_;
     }
     
     @Override
