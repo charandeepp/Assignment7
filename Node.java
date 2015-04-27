@@ -125,9 +125,6 @@ public class Node implements ChordInterface{
         response.append("Updating the successor of the new node to {" + successor.nodeURL_ + "}")
         		.append(System.getProperty("line.separator"));
         
-        NodeInfo pred = predecessor(hashKey);
-        response.append("Updating the predecessor of the new node to {" + pred.nodeURL_ + "}")
-				.append(System.getProperty("line.separator"));
         
         String[] ft = computeFingerTableFor(hashKey);
         response.append("Updating the finger table of the new node to ").append(ft.toString())
@@ -136,9 +133,13 @@ public class Node implements ChordInterface{
         // we should update the predecessor information in the new node's successor
         ChordInterface successorNode;
         NodeInfo nodeInfo;
+        NodeInfo pred;
         try {
         	Registry registry = LocateRegistry.getRegistry();
             successorNode = (ChordInterface) registry.lookup(successor.nodeURL_);
+            pred = successorNode.getThisPredecessor();
+            response.append("Updating the predecessor of the new node to {" + pred.nodeURL_ + "}")
+    				.append(System.getProperty("line.separator"));
             nodeInfo = new NodeInfo(url, hashKey, gc);
             successorNode.notify(nodeInfo);
             response.append("Updating the predecessor of the node following the new node {")
@@ -349,21 +350,6 @@ public class Node implements ChordInterface{
 				(predecessor.nodeId_.compareTo(myInfo_.nodeId_) > 0 || myInfo_.nodeNum_ == 0))) {
             myPredecessor_ = predecessor;
 		}
-    }
-
-    @Override
-    public NodeInfo predecessor(BigInteger id) throws RemoteException {
-		try {
-			NodeInfo successor = successor(id);
-	    	Registry registry = LocateRegistry.getRegistry();
-	    	ChordInterface predecessorNode = (ChordInterface) registry.lookup(successor.nodeURL_);
-	        return predecessorNode.getThisPredecessor();
-		} catch (RemoteException e) {
-			e.printStackTrace();
-		} catch (NotBoundException e) {
-			e.printStackTrace();
-		}
-        return null;
     }
 
     @Override

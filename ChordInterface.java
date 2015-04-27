@@ -15,7 +15,6 @@ public interface ChordInterface extends Remote{
     public FindNodeResponsePair find_node(String key, boolean withTrace) throws RemoteException;
     
     public String lookup(String word) throws RemoteException;
-    public NodeInfo predecessor(BigInteger id) throws RemoteException;
     public NodeInfo getThisPredecessor() throws RemoteException;
     public NodeInfo getThisSuccessor() throws RemoteException;
     public NodeInfo successor(BigInteger id) throws RemoteException;
