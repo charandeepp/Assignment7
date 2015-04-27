@@ -448,12 +448,16 @@ public class Node implements ChordInterface{
 				.append(getMyInfo().nodeId_).toString(), 16).toString();
 		
 		StringBuilder fd = new StringBuilder();
-		fd.append("Node ID: ").append(getMyInfo().nodeNum_).append(", ")
-				.append("URL: ").append(getMyInfo().nodeURL_).append(", ")
-				.append("160-bit key: ").append(keyInHex).append(", ")
-				.append("Successor: ").append(getThisSuccessor().nodeId_).append(", ")
-				.append("Predecessor: ").append(getThisPredecessor().nodeId_).append(", ")
-				.append("Number of Entries: ").append(getKeyStore().size());
+		try {
+			fd.append("Node ID: ").append(getMyInfo().nodeNum_).append(", ")
+					.append("URL: ").append(getMyInfo().nodeURL_).append(", ")
+					.append("160-bit key: ").append(Utils.sha1String(getMyInfo().nodeURL_)).append(", ")
+					.append("Successor: ").append(getThisSuccessor().nodeURL_).append(", ")
+					.append("Predecessor: ").append(getThisPredecessor().nodeURL_).append(", ")
+					.append("Number of Entries: ").append(getKeyStore().size());
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		}
 		
 		return fd.toString();
 	}
