@@ -424,6 +424,9 @@ public class Node implements ChordInterface{
 			
     		System.out.println("finfing successor for " + Utils.sha1BigInt(key));
     		successor = masterNode_.successor(Utils.sha1BigInt(key));
+    		if(successor == null) {
+    			System.out.println("Successor is NULL !!!!!!!!!!!!!!!");
+    		}
     		if(needTrace) response.append("True node holding data for key {" + key +"} is {" + successor.nodeURL_ + "}")
 					.append(System.getProperty("line.separator"));
     		
