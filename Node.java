@@ -417,7 +417,7 @@ public class Node implements ChordInterface{
     	}
     	
     	StringBuilder response = new StringBuilder();
-    	NodeInfo successor = null;
+    	Node.NodeInfo successor = null;
     	
     	try {
     		if(needTrace) response.append("Finding the true node which holds data for key {" + key +"}")
