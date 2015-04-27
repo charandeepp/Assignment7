@@ -139,6 +139,27 @@ public class Client {
 		System.out.println(sb.toString());
 	}
 	
+	
+	private static void print() {
+		String[] nodes = {"node0", "node1", "node2", "node3", "node4" };
+	
+		for(int i = 0; i < nodes.length; ++i) {
+			try {
+				Registry registry = LocateRegistry.getRegistry();
+				ChordInterface masterNode = (ChordInterface) registry.lookup(nodes[i]);
+				System.out.println("Predecessor = " + masterNode.getThisPredecessor().nodeURL_);
+				System.out.println("Successor = " + masterNode.getThisSuccessor().nodeURL_);
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			} catch (NotBoundException e) {
+				e.printStackTrace();
+			}
+			
+		}
+		
+	}
+	
+	
 	public static void main(String[] args) {
 		
 		if(args.length != 1) {
@@ -173,6 +194,7 @@ public class Client {
 		
 		while(true) {
 			
+			print();
 			printChoiceList();
 			
 			try {

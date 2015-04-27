@@ -400,7 +400,6 @@ public class Node implements ChordInterface{
     		if(needTrace) response.append("Finding the true node which holds data for key {" + key +"}")
     				.append(System.getProperty("line.separator"));
 			
-    		System.out.println("finfing successor for " + Utils.sha1BigInt(key));
     		successor = masterNode_.successor(Utils.sha1BigInt(key));
     		if(successor == null) {
     			System.out.println("Successor is NULL !!!!!!!!!!!!!!!");
