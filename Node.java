@@ -7,7 +7,6 @@
  * 
  */
 
-import java.io.Serializable;
 import java.math.BigInteger;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -28,22 +27,6 @@ import java.util.logging.Logger;
  *
  */
 public class Node implements ChordInterface{
-
-    public class NodeInfo implements Serializable{
-
-		private static final long serialVersionUID = 1L;
-
-		public String nodeURL_;
-        public BigInteger nodeId_;
-        public Integer nodeNum_;
-
-        public NodeInfo(String url,BigInteger id,Integer num){
-            nodeURL_ = url;
-            nodeId_ = id;
-            nodeNum_ = num;
-        }
-
-    }
 
     private static String MASTER_NODE_URL;
     private NodeInfo myInfo_;
@@ -153,7 +136,7 @@ public class Node implements ChordInterface{
         
         // we should update the predecessor information in the new node's successor
         ChordInterface successorNode;
-        Node.NodeInfo nodeInfo;
+        NodeInfo nodeInfo;
         try {
         	Registry registry = LocateRegistry.getRegistry();
             successorNode = (ChordInterface) registry.lookup(successor.nodeURL_);
@@ -355,7 +338,7 @@ public class Node implements ChordInterface{
     @Override
     public NodeInfo predecessor(BigInteger id) throws RemoteException {
 		try {
-			Node.NodeInfo successor = successor(id);
+			NodeInfo successor = successor(id);
 	    	Registry registry = LocateRegistry.getRegistry();
 	    	ChordInterface predecessorNode = (ChordInterface) registry.lookup(successor.nodeURL_);
 	        return predecessorNode.getThisPredecessor();
@@ -408,7 +391,7 @@ public class Node implements ChordInterface{
     	}
     	
     	StringBuilder response = new StringBuilder();
-    	Node.NodeInfo successor = null;
+    	NodeInfo successor = null;
     	
     	try {
     		if(needTrace) response.append("Finding the true node which holds data for key {" + key +"}")

@@ -19,9 +19,9 @@ public class JoinResponse implements Serializable{
 
     public Status status;
     public String response;
-    public Node.NodeInfo newNodeInfo;
-    public Node.NodeInfo successor;
-    public Node.NodeInfo predecessor;
+    public NodeInfo newNodeInfo;
+    public NodeInfo successor;
+    public NodeInfo predecessor;
     public String[] fingerTable;
 
     public JoinResponse() {
@@ -34,7 +34,7 @@ public class JoinResponse implements Serializable{
     	response = r;
     }
     
-    public JoinResponse(Status s, String r, Node.NodeInfo info, Node.NodeInfo succ, Node.NodeInfo pred, String[] ft) {
+    public JoinResponse(Status s, String r, NodeInfo info, NodeInfo succ, NodeInfo pred, String[] ft) {
     	status = s;
     	response = r;
     	newNodeInfo = info;
