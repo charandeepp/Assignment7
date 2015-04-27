@@ -190,7 +190,6 @@ public class Node implements ChordInterface{
 			System.out.println("Found start node !!");
 			for(int i=1;i<160;i++){
 				ChordInterface succesorNode = (ChordInterface) registry.lookup(startNode.getThisSuccessor().nodeURL_);
-				System.out.println("Successor is " + succesorNode.getMyInfo().nodeURL_);
 				succesorNode.successor(startNodeInfo.nodeId_.add(Utils.power(2, i)));
 			}
 			response.append("Updating the finger table of the node {")
